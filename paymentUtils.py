@@ -63,12 +63,13 @@ def paymentStatusCheck(paymentID,sender):
 
     print(status)
     if status == 'paid':
-      order_id = response['order_id']
-      message = "Your payment for Payment ID : {} is successful. Your order ID is : {}. We'll get back to you soon with the Order Details".format(paymentID, order_id)
+      amount = response['amount']
+      message = "Your payment for amount Rs. {} is successful . We'll get back to you soon with the Order Details".format(amount/100)
       sendFreeFormText(account_sid, auth_token, fromWhatsapp, sender, message)
       return
     elif status == 'failed':
-      message = "Your payment for Payment ID : {} is failed. Please Retry your Order".format(paymentID)
+      amount = response['amount']
+      message = "Your payment for amount Rs. {} has failed. Please Retry your Order".format(amount/100)
       sendFreeFormText(account_sid, auth_token, fromWhatsapp, sender, message)
       return
     
@@ -76,7 +77,7 @@ def paymentStatusCheck(paymentID,sender):
     time.sleep(20)
   
   razorPayclient.payment_link.cancel(paymentID)
-  message = "Your payment for Payment ID : {} wasn't completed within the time frame. We're deactivating the Payment Link".format(paymentID)
+  message = "Your payment for amount Rs. {} wasn't completed within the time frame. We're deactivating the Payment Link".format(amount/100)
   sendFreeFormText(account_sid, auth_token, fromWhatsapp, sender, message)
   return
 
