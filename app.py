@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, session
 from twilio.twiml.messaging_response import MessagingResponse
 import paymentUtils
+import threading
 import random
 
 
@@ -55,7 +56,7 @@ def reply():
             session['userType'] = 'newUser'
             session['lastMenu'] = 'newUserMenu'
             session['lastState'] = 'nu.enterName.newUser'
-            response = "Hey ! We're happy to onboard you to the platform ! What's your name ?"
+            response = "Hey ! We're happy to onboard you to the platform ! What's your name ? {}"
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
@@ -133,11 +134,17 @@ def reply():
             session['orderDeliveryTime'] = incoming_msg
 
             price = calculatePrice(session.get('orderItem'), session.get('orderQuantity'))
-            paymentLink = paymentUtils.genPaymentLink(session.get('orderItem'), price)
+            paymentLink, paymentID = paymentUtils.genPaymentLink(session.get('orderItem'), price)
             response = "Hey ! Thank You for Placing the Order ! Here's the details of the Order : \n1. Item : {} \n2. Quantity : {} \n3. Delivery Address : {} \n4. Delivery Date : {} \n5. Delivery Time : {} \nThe total price of the order is *Rs. {}* , Pay the amount on the Razorpay Link Here {}".format(session.get('orderItem'), session.get('orderQuantity'), session.get('orderAddress'), session.get('orderDeliveryDate'), session.get('orderDeliveryTime'), price, paymentLink)
             session['lastState'] = 'ex.orderSummary'
             reply_text = MessagingResponse()
             reply_text.message(response)
+
+            paymentThreadName = "paymentThread_" + str(paymentID)
+            print(paymentID)
+            paymentStatusThread = threading.Thread(
+                name=paymentThreadName, target=paymentUtils.paymentStatusCheck, args=(paymentID, sender))
+            paymentStatusThread.start()
             return str(reply_text)
 
         
