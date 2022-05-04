@@ -118,7 +118,7 @@ def reply():
             session['orderAddress'] = incoming_msg
             price = calculatePrice(session.get('orderItem'), session.get('orderQuantity'))
             paymentLink, paymentID = paymentUtils.genPaymentLink(session.get('orderItem'), price)
-            response = "Hey ! Thank You for Placing the Order ! Here's the details of the Order : \n1. Item : {} \n2. Quantity : {} \n3. Delivery Address : {} \n4. Delivery Date : {} \n5. Delivery Time : {} \nThe total price of the order is *Rs. {}* , Pay the amount on the Razorpay Link Here {}".format(session.get('orderItem'), session.get('orderQuantity'), session.get('orderAddress'), price, paymentLink)
+            response = "Hey ! Thank You for Placing the Order ! Here's the details of the Order : \n1. Item : {} \n2. Quantity : {} \n3. Delivery Address : {} \nThe total price of the order is *Rs. {}* , Pay the amount on the Razorpay Link Here {}. The payment link will be active only for 10 minutes".format(session.get('orderItem'), session.get('orderQuantity'), session.get('orderAddress'), price, paymentLink)
             session['lastState'] = 'ex.orderSummary'
             reply_text = MessagingResponse()
             reply_text.message(response)
@@ -129,9 +129,7 @@ def reply():
                 name=paymentThreadName, target=paymentUtils.paymentStatusCheck, args=(paymentID, sender))
             paymentStatusThread.start()
             return str(reply_text)
-        
-        elif session.get('lastState') == 'ex.orderDeliveryTime':
-            session['orderDeliveryTime'] = incoming_msg
+    
 
            
         
