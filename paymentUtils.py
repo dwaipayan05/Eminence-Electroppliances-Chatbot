@@ -64,7 +64,8 @@ def paymentStatusCheck(paymentID,sender):
     print(status)
     if status == 'paid':
       amount = response['amount']
-      message = "Your payment for amount Rs. {} is successful . We'll get back to you soon with the Order Details".format(amount/100)
+      message = "Your payment for amount Rs. {} is successful. For order updates and any queries, feel free to reach out to us.".format(
+          amount/100)
       sendFreeFormText(account_sid, auth_token, fromWhatsapp, sender, message)
       return
     elif status == 'failed':
