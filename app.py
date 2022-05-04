@@ -55,7 +55,7 @@ def reply():
         if session.get('lastMenu') == 'welcomeMenu':
             session['userType'] = 'newUser'
             session['lastMenu'] = 'newUserMenu'
-            session['lastState'] = 'nu.enterName.newUser'
+            session['lastState'] = 'nu.enterName'
             response = "Hey ! We're happy to onboard you to the platform ! What's your name ? {}"
             reply_text = MessagingResponse()
             reply_text.message(response)
@@ -116,26 +116,9 @@ def reply():
         
         elif session.get('lastState') == 'ex.orderAddress':
             session['orderAddress'] = incoming_msg
-            response = "Could you please enter the expected Delivery Date of the Order that you are placing ?"
-            session['lastState'] = 'ex.orderDeliveryDate'
-            reply_text = MessagingResponse()
-            reply_text.message(response)
-            return str(reply_text)
-        
-        elif session.get('lastState') == 'ex.orderDeliveryDate':
-            session['orderDeliveryDate'] = incoming_msg
-            response = "Could you please enter the expected Delivery Time of the Order that you are placing ?"
-            session['lastState'] = 'ex.orderDeliveryTime'
-            reply_text = MessagingResponse()
-            reply_text.message(response)
-            return str(reply_text)
-        
-        elif session.get('lastState') == 'ex.orderDeliveryTime':
-            session['orderDeliveryTime'] = incoming_msg
-
             price = calculatePrice(session.get('orderItem'), session.get('orderQuantity'))
             paymentLink, paymentID = paymentUtils.genPaymentLink(session.get('orderItem'), price)
-            response = "Hey ! Thank You for Placing the Order ! Here's the details of the Order : \n1. Item : {} \n2. Quantity : {} \n3. Delivery Address : {} \n4. Delivery Date : {} \n5. Delivery Time : {} \nThe total price of the order is *Rs. {}* , Pay the amount on the Razorpay Link Here {}".format(session.get('orderItem'), session.get('orderQuantity'), session.get('orderAddress'), session.get('orderDeliveryDate'), session.get('orderDeliveryTime'), price, paymentLink)
+            response = "Hey ! Thank You for Placing the Order ! Here's the details of the Order : \n1. Item : {} \n2. Quantity : {} \n3. Delivery Address : {} \n4. Delivery Date : {} \n5. Delivery Time : {} \nThe total price of the order is *Rs. {}* , Pay the amount on the Razorpay Link Here {}".format(session.get('orderItem'), session.get('orderQuantity'), session.get('orderAddress'), price, paymentLink)
             session['lastState'] = 'ex.orderSummary'
             reply_text = MessagingResponse()
             reply_text.message(response)
@@ -146,7 +129,11 @@ def reply():
                 name=paymentThreadName, target=paymentUtils.paymentStatusCheck, args=(paymentID, sender))
             paymentStatusThread.start()
             return str(reply_text)
+        
+        elif session.get('lastState') == 'ex.orderDeliveryTime':
+            session['orderDeliveryTime'] = incoming_msg
 
+           
         
 if __name__ == "__main__":
     app.run(debug=True)
