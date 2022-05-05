@@ -194,6 +194,14 @@ def reply():
             reply_text.message(response)
             return str(reply_text)
 
+        elif session.get('lastState') == 'nu.enterBillingAddressNo':
+            session['userBillingAddress'] = incoming_msg
+            response = "Please enter your GST Number"
+            session['lastState'] = 'nu.enterGSTNumber'
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+
         elif session.get('lastState') == 'nu.enterBillingAddressYes':
             session['userBillingAddress'] = session.get('userShippingAddress')
             session['userGSTNumber'] = incoming_msg
