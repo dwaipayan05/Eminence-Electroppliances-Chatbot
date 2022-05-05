@@ -76,6 +76,12 @@ def reply():
             reply_text.message(response)
             return str(reply_text)
         
+        elif session.get('lastMenu') == 'nu.enterBillingAddressQuestion':
+            session['lastState'] = 'nu.enterBillingAddressYes'
+            response = "Please enter your GST Number"
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
         else:
             response = "Hey ! It Seems like you selected an invalid option. Please type Reset to start again."
 
@@ -93,6 +99,13 @@ def reply():
             session['nu.clientCategory'] = 'Wholeseller or Distributor'
             session['lastState'] = 'nu.enterShippingAddress'
             response = "Could you please enter the default Shipping Address ?"
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+
+        elif session.get('lastMenu') == 'nu.enterBillingAddressQuestion':
+            session['lastState'] = 'nu.enterBillingAddressNo'
+            response = "Could you please enter the default Billing Address ?"
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
@@ -175,23 +188,26 @@ def reply():
            
         elif session.get('lastState') == 'nu.enterShippingAddress':
             session['userShippingAddress'] = incoming_msg
-            response = "Could you please enter the default Billing Address ?"
-            session['lastState'] = 'nu.enterBillingAddress'
+            response = "Do you want to keep your billing address same as your shipping address ? \n \n1. Yes \n2. No\nPlease Enter 1 or 2"
+            session['lastMenu'] = 'nu.enterBillingAddressQuestion'
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
 
-        elif session.get('lastState') == 'nu.enterBillingAddress':
-            session['userBillingAddress'] = incoming_msg
-            response = "Could you please enter your GST Number ?"
-            session['lastState'] = 'nu.enterGSTNumber'
+        elif session.get('lastState') == 'nu.enterBillingAddressYes':
+            session['userBillingAddress'] = session.get('userShippingAddress')
+            session['userGSTNumber'] = incoming_msg
+            response = "Thank you {} {} ! You have successfully registered with us. You can now place orders for our existing products and connect with us anytime for your queries".format(
+                session.get('userFirstName'), session.get('userLastName'))
+            session['lastState'] = 'nu.ProfileSummary'
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
         
         elif session.get('lastState') == 'nu.enterGSTNumber':
             session['userGSTNumber'] = incoming_msg
-            response = "Thank you {} {} ! You have successfully registered with us. You can now place orders and use other functionalities.".format(session.get('userFirstName'), session.get('userLastName'))
+            response = "Thank you {} {} ! You have successfully registered with us. You can now place orders for our existing products and connect with us anytime for your queries".format(
+                session.get('userFirstName'), session.get('userLastName'))
             session['lastState'] = 'nu.ProfileSummary'
             reply_text = MessagingResponse()
             reply_text.message(response)
