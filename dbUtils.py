@@ -66,3 +66,23 @@ def addUserToDB(phoneNumber, firstName, lastName, email, customerType, shippingA
     cursor.close()
     connection.close()
     return
+
+def listUsers():
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+    
+    connection.start_transaction()
+    queryString = "SELECT phoneNumber FROM eminenceUsers"
+
+    cursor = connection.cursor(buffered = True, dictionary = True)
+    cursor.execute(queryString)
+
+    result = cursor.fetchall()
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return result

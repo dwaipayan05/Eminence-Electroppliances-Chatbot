@@ -2,7 +2,7 @@ import os
 import time
 import razorpay
 from dotenv import load_dotenv
-from twilio.rest import Client
+from util import sendFreeFormText
 
 load_dotenv()
 
@@ -12,19 +12,12 @@ account_sid = os.getenv('TWILIO_ACCOUNT_SID')
 auth_token = os.getenv('TWILIO_AUTH_TOKEN')
 
 razorPayclient = razorpay.Client(auth=(razorpayKeyID, razorypaySecretKey))
-twilioClient = Client(account_sid, auth_token)
+
 # Things to Do:
 # 1. Make Customer Details dynamic
 # 2. Make Order Details : Order ID, Quantity, Amount, Currency
 
-def sendFreeFormText(account_sid, auth_token, sender, recipient, message):
-    client = Client(account_sid, auth_token)
-    message = client.messages.create(
-        body=message,
-        from_=sender,
-        to=recipient
-    )
-    return message.sid
+
 
 def genPaymentLink(itemType, amount):
     descriptionString = "Payment for " + itemType
