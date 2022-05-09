@@ -1,12 +1,13 @@
 import os
 import re
 import requests
-from dotenv import load_dotenv
-from flask import Flask, request, session
-from twilio.twiml.messaging_response import MessagingResponse
-import paymentUtils
 import threading
 import random
+import dbUtils
+import paymentUtils
+from dotenv import load_dotenv
+from twilio.twiml.messaging_response import MessagingResponse
+from flask import Flask, request, session
 
 
 def random_number(min, max):
@@ -88,12 +89,24 @@ def reply():
     elif re.match(incoming_msg, "2", re.IGNORECASE):
         if session.get('lastMenu') == 'welcomeMenu':
             session['userType'] = 'existingUser'
-            session['lastMenu'] = 'existingUserMenu'
-            session['lastState'] = 'existingUserMenuDisplay'
-            response = "Hey ! What do you need help with ? \n \n1. Place a New Order\n2. Updates on Order\n3. Catalogue\n4. Other "
-            reply_text = MessagingResponse()
-            reply_text.message(response)
-            return str(reply_text)
+            session['lastState'] = 'existingUserCheck'
+
+            isUserPresent, userData = dbUtils.checkUserExists(sender)
+            if isUserPresent:
+                session['lastMenu'] = 'existingUserMenu'
+                session['lastState'] = 'existingUserMenuDisplay'
+                userName = userData[0][1] + " " + userData[0][2]
+                response = "Hey {} ! What do you need help with ? \n \n1. Place a New Order\n2. Updates on Order\n3. Catalogue\n4. Other ".format(userName)
+                reply_text = MessagingResponse()
+                reply_text.message(response)
+                return str(reply_text)
+
+            else:
+                response = "Hey ! It seems like you are not registered with us. Could you please enter your First Name ?"
+                session['lastState'] = 'nu.enterName'
+                reply_text = MessagingResponse()
+                reply_text.message(response)
+                return str(reply_text)
 
         elif session.get('lastMenu') == 'nu.enterCategoryMenu':
             session['nu.clientCategory'] = 'Wholeseller or Distributor'
@@ -188,7 +201,7 @@ def reply():
            
         elif session.get('lastState') == 'nu.enterShippingAddress':
             session['userShippingAddress'] = incoming_msg
-            response = "Do you want to keep your billing address same as your shipping address ? \n \n1. Yes \n2. No\nPlease Enter 1 or 2"
+            response = "Do you want to keep your billing address same as your shipping address ?\n1. Yes \n2. No\ nPlease Enter 1 or 2"
             session['lastMenu'] = 'nu.enterBillingAddressQuestion'
             reply_text = MessagingResponse()
             reply_text.message(response)
@@ -205,6 +218,8 @@ def reply():
         elif session.get('lastState') == 'nu.enterBillingAddressYes':
             session['userBillingAddress'] = session.get('userShippingAddress')
             session['userGSTNumber'] = incoming_msg
+            dbUtils.addUserToDB(sender, session.get('userFirstName'), session.get('userLastName'), session.get(
+                'userEmail'), session.get('nu.clientCategory'), session.get('userShippingAddress'), session.get('userBillingAddress'), session.get('userGSTNumber'))
             response = "Thank you {} {} ! You have successfully registered with us. You can now place orders for our existing products and connect with us anytime for your queries".format(
                 session.get('userFirstName'), session.get('userLastName'))
             session['lastState'] = 'nu.ProfileSummary'
@@ -216,6 +231,8 @@ def reply():
             session['userGSTNumber'] = incoming_msg
             response = "Thank you {} {} ! You have successfully registered with us. You can now place orders for our existing products and connect with us anytime for your queries".format(
                 session.get('userFirstName'), session.get('userLastName'))
+            dbUtils.addUserToDB(sender, session.get('userFirstName'), session.get('userLastName'), session.get(
+                'userEmail'), session.get('nu.clientCategory'), session.get('userShippingAddress'), session.get('userBillingAddress'), session.get('userGSTNumber'))
             session['lastState'] = 'nu.ProfileSummary'
             reply_text = MessagingResponse()
             reply_text.message(response)
