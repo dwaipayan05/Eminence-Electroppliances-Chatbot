@@ -1,12 +1,13 @@
 import os
 import re
 import requests
-from dotenv import load_dotenv
-from flask import Flask, request, session
-from twilio.twiml.messaging_response import MessagingResponse
-import paymentUtils
 import threading
 import random
+import dbUtils
+import paymentUtils
+from dotenv import load_dotenv
+from twilio.twiml.messaging_response import MessagingResponse
+from flask import Flask, request, session
 
 
 def random_number(min, max):
@@ -56,7 +57,7 @@ def reply():
             session['userType'] = 'newUser'
             session['lastMenu'] = 'newUserMenu'
             session['lastState'] = 'nu.enterName'
-            response = "Hey ! We're happy to onboard you to the platform ! What's your name ? {}"
+            response = "Hey ! We're happy to onboard you to the platform ! What's your first name ?"
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
@@ -68,17 +69,60 @@ def reply():
             reply_text.message(response)
             return str(reply_text)
         
-        else:
-            response = "Hey ! It Seems like you selected an invalid option. Please type Reset to start again."
-    elif re.match(incoming_msg, "2", re.IGNORECASE):
-        if session.get('lastMenu') == 'welcomeMenu':
-            session['userType'] = 'existingUser'
-            session['lastMenu'] = 'existingUserMenu'
-            session['lastState'] = 'existingUserMenuDisplay'
-            response = "Hey ! What do you need help with ? \n \n1. Place a New Order\n2. Updates on Order\n3. Catalogue\n4. Other "
+        elif session.get('lastMenu') == 'nu.enterCategoryMenu':
+            session['nu.clientCategory'] = 'Manufacturer'
+            session['lastState'] = 'nu.enterShippingAddress'
+            response = "Could you please enter the default Shipping Address ?"
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
+        
+        elif session.get('lastMenu') == 'nu.enterBillingAddressQuestion':
+            session['lastState'] = 'nu.enterBillingAddressYes'
+            response = "Please enter your GST Number"
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+        else:
+            response = "Hey ! It Seems like you selected an invalid option. Please type Reset to start again."
+
+    elif re.match(incoming_msg, "2", re.IGNORECASE):
+        if session.get('lastMenu') == 'welcomeMenu':
+            session['userType'] = 'existingUser'
+            session['lastState'] = 'existingUserCheck'
+
+            isUserPresent, userData = dbUtils.checkUserExists(sender)
+            if isUserPresent:
+                session['lastMenu'] = 'existingUserMenu'
+                session['lastState'] = 'existingUserMenuDisplay'
+                userName = userData[0][1] + " " + userData[0][2]
+                response = "Hey {} ! What do you need help with ? \n \n1. Place a New Order\n2. Updates on Order\n3. Catalogue\n4. Other ".format(userName)
+                reply_text = MessagingResponse()
+                reply_text.message(response)
+                return str(reply_text)
+
+            else:
+                response = "Hey ! It seems like you are not registered with us. Could you please enter your First Name ?"
+                session['lastState'] = 'nu.enterName'
+                reply_text = MessagingResponse()
+                reply_text.message(response)
+                return str(reply_text)
+
+        elif session.get('lastMenu') == 'nu.enterCategoryMenu':
+            session['nu.clientCategory'] = 'Wholeseller or Distributor'
+            session['lastState'] = 'nu.enterShippingAddress'
+            response = "Could you please enter the default Shipping Address ?"
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+
+        elif session.get('lastMenu') == 'nu.enterBillingAddressQuestion':
+            session['lastState'] = 'nu.enterBillingAddressNo'
+            response = "Could you please enter the default Billing Address ?"
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+
         else:
             response = "Hey ! It Seems like you selected an invalid option. Please type Reset to start again."
    
@@ -129,9 +173,70 @@ def reply():
                 name=paymentThreadName, target=paymentUtils.paymentStatusCheck, args=(paymentID, sender))
             paymentStatusThread.start()
             return str(reply_text)
-    
 
+        elif session.get('lastState') == 'nu.enterName':
+            session['userFirstName'] = incoming_msg
+            response = "Hey {} ! What's your last name ?".format(session.get('userFirstName'))
+            session['lastState'] = 'nu.enterLastName'
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+        
+        elif session.get('lastState') == 'nu.enterLastName':
+            session['userLastName'] = incoming_msg
+            response = "Hey {} {} ! What's your email id ?".format(session.get('userFirstName'), session.get('userLastName'))
+            session['lastState'] = 'nu.enterEmail'
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+        
+        elif session.get('lastState') == 'nu.enterEmail':
+            session['userEmail'] = incoming_msg
+            response = "Could you please tell us under what category do you fall under ? \n \n1. Manufacturer \n2. Wholeseller or Distributor \n3. Retailer \n4. Electrical Contractor \n5. Customer Please Enter the Category Number"
+            session['lastState'] = 'nu.enterCategory'
+            session['lastMenu'] = 'nu.enterCategoryMenu'
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
            
+        elif session.get('lastState') == 'nu.enterShippingAddress':
+            session['userShippingAddress'] = incoming_msg
+            response = "Do you want to keep your billing address same as your shipping address ?\n1. Yes \n2. No\ nPlease Enter 1 or 2"
+            session['lastMenu'] = 'nu.enterBillingAddressQuestion'
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+
+        elif session.get('lastState') == 'nu.enterBillingAddressNo':
+            session['userBillingAddress'] = incoming_msg
+            response = "Please enter your GST Number"
+            session['lastState'] = 'nu.enterGSTNumber'
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+
+        elif session.get('lastState') == 'nu.enterBillingAddressYes':
+            session['userBillingAddress'] = session.get('userShippingAddress')
+            session['userGSTNumber'] = incoming_msg
+            dbUtils.addUserToDB(sender, session.get('userFirstName'), session.get('userLastName'), session.get(
+                'userEmail'), session.get('nu.clientCategory'), session.get('userShippingAddress'), session.get('userBillingAddress'), session.get('userGSTNumber'))
+            response = "Thank you {} {} ! You have successfully registered with us. You can now place orders for our existing products and connect with us anytime for your queries".format(
+                session.get('userFirstName'), session.get('userLastName'))
+            session['lastState'] = 'nu.ProfileSummary'
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+        
+        elif session.get('lastState') == 'nu.enterGSTNumber':
+            session['userGSTNumber'] = incoming_msg
+            response = "Thank you {} {} ! You have successfully registered with us. You can now place orders for our existing products and connect with us anytime for your queries".format(
+                session.get('userFirstName'), session.get('userLastName'))
+            dbUtils.addUserToDB(sender, session.get('userFirstName'), session.get('userLastName'), session.get(
+                'userEmail'), session.get('nu.clientCategory'), session.get('userShippingAddress'), session.get('userBillingAddress'), session.get('userGSTNumber'))
+            session['lastState'] = 'nu.ProfileSummary'
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
         
 if __name__ == "__main__":
     app.run(debug=True)
