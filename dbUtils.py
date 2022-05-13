@@ -26,7 +26,7 @@ def checkUserExists(phoneNumber):
     userExists = False
 
     userData = (phoneNumber,)
-    userDataCheck = "SELECT * FROM eminenceusers WHERE phoneNumber = %s"
+    userDataCheck = "SELECT * FROM userData WHERE phoneNumber = %s"
 
     cursor = connection.cursor(prepared=True)
     cursor.execute(userDataCheck, userData)
@@ -39,7 +39,7 @@ def checkUserExists(phoneNumber):
     
 
 def addUserToDB(phoneNumber, firstName, lastName, email, customerType, shippingAddress, billingAddress, GSTIN):
-
+    userExists, result = checkUserExists(phoneNumber=phoneNumber)
     phoneNumber = phoneNumber.split(":")[1]
     try:
         connection = mysql.connector.connect(**config)
@@ -48,8 +48,15 @@ def addUserToDB(phoneNumber, firstName, lastName, email, customerType, shippingA
         print("Failed to connect to MySQL: {}".format(error))
         return
     
-    userData = (phoneNumber, firstName, lastName, email, customerType, shippingAddress, billingAddress, GSTIN)
-    userDataAdd = "INSERT INTO eminenceusers (phoneNumber, firstName, lastName, emailID, customerType, shippingAddress, billingAddress, GSTIN) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+
+    if userExists:
+        userData = (firstName, lastName, email,
+                    customerType, shippingAddress, billingAddress, GSTIN, phoneNumber)
+        userDataAdd = "UPDATE userData SET firstName = %s, lastName = %s, emailID = %s, customerType = %s, shippingAddress = %s, billingAddress = %s, GSTIN = %s WHERE phoneNumber = %s"
+
+    else:
+        userData = (phoneNumber, firstName, lastName, email, customerType, shippingAddress, billingAddress, GSTIN)
+        userDataAdd = "INSERT INTO userData (phoneNumber, firstName, lastName, emailID, customerType, shippingAddress, billingAddress, GSTIN) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
 
     connection.start_transaction()
     cursor = connection.cursor(prepared=True)
@@ -75,7 +82,7 @@ def listUsers():
         return
     
     connection.start_transaction()
-    queryString = "SELECT phoneNumber FROM eminenceUsers"
+    queryString = "SELECT phoneNumber FROM userData"
 
     cursor = connection.cursor(buffered = True, dictionary = True)
     cursor.execute(queryString)
@@ -86,3 +93,31 @@ def listUsers():
     connection.close()
 
     return result
+
+def getUserName(phoneNumber):
+    phoneNumber = str(phoneNumber.split(":")[1])
+    
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+    
+    connection.start_transaction()
+    queryData = (phoneNumber,)
+    queryString = "SELECT firstName, lastName FROM userData WHERE phoneNumber=%s"
+
+    cursor = connection.cursor(buffered = True, dictionary = True)
+    cursor.execute(queryString, queryData)
+
+    result = cursor.fetchall()
+
+    userName = result[0]['firstName'] + " " + result[0]['lastName']
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return userName
+
+if __name__ == "__main__":
+    print(getUserName("whatsapp:+919869368512"))

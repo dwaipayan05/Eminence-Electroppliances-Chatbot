@@ -1,9 +1,11 @@
 import os
 import re
+from socket import MsgFlag
 import requests
 import threading
 import random
 import dbUtils
+import emailUtils
 import paymentUtils
 from dotenv import load_dotenv
 from twilio.twiml.messaging_response import MessagingResponse
@@ -125,7 +127,26 @@ def reply():
 
         else:
             response = "Hey ! It Seems like you selected an invalid option. Please type Reset to start again."
-   
+    
+    elif re.match(incoming_msg, "3", re.IGNORECASE):
+        if session.get('lastMenu') == 'existingUserMenu':
+            session['lastState'] = 'ex.CatalogueDisplay'
+            response = "Hey ! Please Find our Catalogue in the image attached above v. Feel free to reach out to us in case of any queries"
+            reply = MessagingResponse()
+            msg = reply.message()
+            msg.body(response)
+            msg.media(
+                'https://images.unsplash.com/photo-1627395410076-15da6119fff9?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=722&q=80')
+            return str(reply)
+
+    elif re.match(incoming_msg, "4", re.IGNORECASE):
+        if session.get('lastMenu') == 'existingUserMenu':
+            session['lastState'] = 'ex.CustomQuery'
+            response = "Please Enter your Custom Query below (Max Limit : 1600 Characters). We'll reach out to you soon."
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+        
     elif re.match(incoming_msg, "Session Variables Check", re.IGNORECASE):
         lastMenu = session.get('lastMenu')
         lastState = session.get('lastState')
@@ -238,5 +259,16 @@ def reply():
             reply_text.message(response)
             return str(reply_text)
         
+        elif session.get('lastState') == 'ex.CustomQuery':
+            emailThreadName = "emailThread_" + str(sender)
+            emailThread = threading.Thread(
+                name=emailThreadName, target=emailUtils.sendEmail, args=(sender, incoming_msg))
+            emailThread.start()
+            response = "Your response has been recorded. We'll be reaching out to you soon with our response"
+            session['lastState'] = 'ex.CustomQueryRecorded'
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+            
 if __name__ == "__main__":
     app.run(debug=True)
