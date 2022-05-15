@@ -66,7 +66,14 @@ def reply():
         
         elif session.get('lastMenu') == 'existingUserMenu':
             session['lastState'] = 'ex.orderItem'
-            response = "Hey ! What would you like to order ?"
+            session['lastMenu'] = 'ex.productList'
+            productList = dbUtils.getProductList()
+            response = "Hey ! What would you like to order ? \n"
+            idx = 1
+            for product in productList:
+                response += "\n" + str(idx) + ". " + str(product['productName'])
+                idx += 1
+            response += "\n\nType the Number of the Item you want to Order"
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
@@ -85,6 +92,39 @@ def reply():
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
+        
+        elif session.get('lastMenu') == 'ex.productList':
+            session['productOrdered'] = "Roma 2.1"
+        
+            GSTIN = dbUtils.getGSTIN(sender)
+            if GSTIN == "N/A":
+                response = "Hey ! We don't have your GST Number. Do you have GST Number ? \n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
+                session['lastMenu'] = 'ex.orderGSTNumberMenu'
+                session['lastState'] = 'ex.orderGSTNumberConfirm'
+            else:
+                BillingAddress = dbUtils.getBillingAddress(sender)
+                if BillingAddress == "N/A":
+                    response = "Please Enter your Billing Address Below"
+                    session['lastState'] = 'ex.orderEnterBillingAddress'
+                else:
+                    ShippingAddress = dbUtils.getShippingAddress(sender)
+                    session['lastState'] = 'ex.orderShippingAddressConfirm'
+                    session['lastMenu'] = 'ex.orderShippingAddressMenu'
+                    response = "Please Confirm your Shipping Address Below \n" + str(ShippingAddress) + "\n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+        
+        elif session.get('lastMenu') == 'ex.orderGSTNumberMenu':
+            response = "Please enter your GST Number"
+            session['lastState'] = 'ex.orderGSTNumberEnter'
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+        
+        elif session.get('lastMenu') == 'ex.orderShippingAddressMenu':
+            response = "Order Summary"
+            session['lastState'] = 'ex.orderShippingAddressConfirm'
         else:
             response = "Hey ! It Seems like you selected an invalid option. Please type Reset to start again."
 
@@ -124,6 +164,50 @@ def reply():
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
+        
+        elif session.get('lastMenu') == 'ex.productList':
+            session['productOrdered'] = "Roma 2.4"
+        
+            GSTIN = dbUtils.getGSTIN(sender)
+            if GSTIN == "N/A":
+                response = "Hey ! We don't have your GST Number. Do you have GST Number ? \n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
+                session['lastMenu'] = 'ex.orderGSTNumberMenu'
+                session['lastState'] = 'ex.orderGSTNumberConfirm'
+            else:
+                BillingAddress = dbUtils.getBillingAddress(sender)
+                if BillingAddress == "N/A":
+                    response = "Please Enter your Billing Address Below"
+                    session['lastState'] = 'ex.orderEnterBillingAddress'
+                else:
+                    ShippingAddress = dbUtils.getShippingAddress(sender)
+                    session['lastState'] = 'ex.orderShippingAddressConfirm'
+                    session['lastMenu'] = 'ex.orderShippingAddressMenu'
+                    response = "Please Confirm your Shipping Address Below \n" + str(ShippingAddress) + "\n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+        
+        elif session.get('lastMenu') == 'ex.orderGSTNumberMenu':
+            BillingAddress = dbUtils.getBillingAddress(sender)
+            if BillingAddress == "N/A":
+                    response = "Please Enter your Billing Address Below"
+                    session['lastState'] = 'ex.orderEnterBillingAddress'
+            else:
+                ShippingAddress = dbUtils.getShippingAddress(sender)
+                session['lastState'] = 'ex.orderShippingAddressConfirm'
+                session['lastMenu'] = 'ex.orderShippingAddressMenu'
+                response = "Please Confirm your Shipping Address Below \n" + \
+                str(ShippingAddress) + "\n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+        
+        elif session.get('lastMenu') == 'ex.orderShippingAddressMenu':
+            response = "Please Enter your Shipping Address Below"
+            session['lastState'] = 'ex.orderEnterShippingAddress'
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
 
         else:
             response = "Hey ! It Seems like you selected an invalid option. Please type Reset to start again."
@@ -138,7 +222,29 @@ def reply():
             msg.media(
                 'https://images.unsplash.com/photo-1627395410076-15da6119fff9?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=722&q=80')
             return str(reply)
-
+        
+        elif session.get('lastMenu') == 'ex.productList':
+            session['productOrdered'] = "Roma Double"
+        
+            GSTIN = dbUtils.getGSTIN(sender)
+            if GSTIN == "N/A":
+                response = "Hey ! We don't have your GST Number. Do you have GST Number ? \n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
+                session['lastMenu'] = 'ex.orderGSTNumberMenu'
+                session['lastState'] = 'ex.orderGSTNumberConfirm'
+            else:
+                BillingAddress = dbUtils.getBillingAddress(sender)
+                if BillingAddress == "N/A":
+                    response = "Please Enter your Billing Address Below"
+                    session['lastState'] = 'ex.orderEnterBillingAddress'
+                else:
+                    ShippingAddress = dbUtils.getShippingAddress(sender)
+                    session['lastState'] = 'ex.orderShippingAddressConfirm'
+                    session['lastMenu'] = 'ex.orderShippingAddressMenu'
+                    response = "Please Confirm your Shipping Address Below \n" + str(ShippingAddress) + "\n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+        
     elif re.match(incoming_msg, "4", re.IGNORECASE):
         if session.get('lastMenu') == 'existingUserMenu':
             session['lastState'] = 'ex.CustomQuery'
@@ -147,6 +253,27 @@ def reply():
             reply_text.message(response)
             return str(reply_text)
         
+        elif session.get('lastMenu') == 'ex.productList':
+            session['productOrdered'] = "Buddy"
+        
+            GSTIN = dbUtils.getGSTIN(sender)
+            if GSTIN == "N/A":
+                response = "Hey ! We don't have your GST Number. Do you have GST Number ? \n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
+                session['lastMenu'] = 'ex.orderGSTNumberMenu'
+                session['lastState'] = 'ex.orderGSTNumberConfirm'
+            else:
+                BillingAddress = dbUtils.getBillingAddress(sender)
+                if BillingAddress == "N/A":
+                    response = "Please Enter your Billing Address Below"
+                    session['lastState'] = 'ex.orderEnterBillingAddress'
+                else:
+                    ShippingAddress = dbUtils.getShippingAddress(sender)
+                    session['lastState'] = 'ex.orderShippingAddressConfirm'
+                    session['lastMenu'] = 'ex.orderShippingAddressMenu'
+                    response = "Please Confirm your Shipping Address Below \n" + str(ShippingAddress) + "\n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
     elif re.match(incoming_msg, "Session Variables Check", re.IGNORECASE):
         lastMenu = session.get('lastMenu')
         lastState = session.get('lastState')
@@ -159,22 +286,6 @@ def reply():
     else :
         if session.get('lastState') == '':
             response = "Sorry, I didn't understand that. Please type a Hi or Hello to start the conversation."
-            reply_text = MessagingResponse()
-            reply_text.message(response)
-            return str(reply_text)
-
-        elif session.get('lastState') == 'ex.orderItem':
-            session['orderItem'] = incoming_msg
-            response = "Could you please enter the Quantity of the Order that you are placing ?"
-            session['lastState'] = 'ex.orderQuantity'
-            reply_text = MessagingResponse()
-            reply_text.message(response)
-            return str(reply_text)
-        
-        elif session.get('lastState') == 'ex.orderQuantity':
-            session['orderQuantity'] = incoming_msg
-            response = "Could you please enter the Delivery Address of the Order that you are placing ?"
-            session['lastState'] = 'ex.orderAddress'
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
@@ -269,6 +380,43 @@ def reply():
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
-            
+        
+        elif session.get('lastState') == 'ex.orderGSTNumberEnter':
+            session['orderGSTNumber'] = incoming_msg
+            dbUtils.updateGSTNumber(sender, session.get('orderGSTNumber'))
+            BillingAddress = dbUtils.getBillingAddress(sender)
+            if BillingAddress == "N/A":
+                    response = "Please Enter your Billing Address Below"
+                    session['lastState'] = 'ex.orderEnterBillingAddress'
+            else:
+                ShippingAddress = dbUtils.getShippingAddress(sender)
+                session['lastState'] = 'ex.orderShippingAddressConfirm'
+                session['lastMenu'] = 'ex.orderShippingAddressMenu'
+                response = "Please Confirm your Shipping Address Below \n" + \
+                str(ShippingAddress) + "\n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+        
+        elif session.get('lastState') == 'ex.orderEnterBillingAddress':
+            session['orderBillingAddress'] = incoming_msg
+            dbUtils.updateBillingAddress(sender, session.get('orderBillingAddress'))
+            ShippingAddress = dbUtils.getShippingAddress(sender)
+            session['lastMenu'] = 'ex.orderShippingAddressMenu'
+            response = "Please Confirm your Shipping Address Below \n" + \
+                str(ShippingAddress) + "\n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+        
+        elif session.get('lastState') == 'ex.orderEnterShippingAddress':
+            session['orderShippingAddress'] = incoming_msg
+            dbUtils.updateShippingAddress(sender, session.get('orderShippingAddress'))
+            session['lastState'] = 'ex.orderSummary'
+            response = "Order Summary"
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+             
 if __name__ == "__main__":
     app.run(debug=True)

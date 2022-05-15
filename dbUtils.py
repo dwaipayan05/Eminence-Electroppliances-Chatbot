@@ -119,5 +119,160 @@ def getUserName(phoneNumber):
 
     return userName
 
+def getProductList():
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+    
+    connection.start_transaction()
+    queryString = "SELECT productName FROM productsData"
+
+    cursor = connection.cursor(buffered = True, dictionary = True)
+    cursor.execute(queryString)
+
+    result = cursor.fetchall()
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return result
+
+
+def getGSTIN(phoneNumber):
+    phoneNumber = str(phoneNumber.split(":")[1])
+
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+
+    connection.start_transaction()
+    queryData = (phoneNumber,)
+    queryString = "SELECT GSTIN FROM userData WHERE phoneNumber=%s"
+
+    cursor = connection.cursor(buffered=True, dictionary=True)
+    cursor.execute(queryString, queryData)
+
+    result = cursor.fetchall()
+
+    GSTIN = result[0]['GSTIN']
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return GSTIN
+
+def getBillingAddress(phoneNumber):
+    phoneNumber = str(phoneNumber.split(":")[1])
+
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+
+    connection.start_transaction()
+    queryData = (phoneNumber,)
+    queryString = "SELECT billingAddress FROM userData WHERE phoneNumber=%s"
+
+    cursor = connection.cursor(buffered=True, dictionary=True)
+    cursor.execute(queryString, queryData)
+
+    result = cursor.fetchall()
+
+    billingAddress = result[0]['billingAddress']
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return billingAddress
+
+def getShippingAddress(phoneNumber):
+    phoneNumber = str(phoneNumber.split(":")[1])
+
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+
+    connection.start_transaction()
+    queryData = (phoneNumber,)
+    queryString = "SELECT shippingAddress FROM userData WHERE phoneNumber=%s"
+
+    cursor = connection.cursor(buffered=True, dictionary=True)
+    cursor.execute(queryString, queryData)
+
+    result = cursor.fetchall()
+
+    shippingAddress = result[0]['shippingAddress']
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return shippingAddress
+
+
+def updateGSTNumber(sender, GSTNumber):
+    phoneNumber = str(sender.split(":")[1])
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+    
+    connection.start_transaction()
+    queryData = (GSTNumber, phoneNumber)
+    queryString = "UPDATE userData SET GSTIN = %s WHERE phoneNumber = %s"
+
+    cursor = connection.cursor(buffered=True, dictionary=True)
+    cursor.execute(queryString, queryData)
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+def updateBillingAddress(sender, billingAddress):
+    phoneNumber = str(sender.split(":")[1])
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+    
+    connection.start_transaction()
+    queryData = (billingAddress, phoneNumber)
+    queryString = "UPDATE userData SET billingAddress = %s WHERE phoneNumber = %s"
+
+    cursor = connection.cursor(buffered=True, dictionary=True)
+    cursor.execute(queryString, queryData)
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+def updateShippingAddress(sender, shippingAddress):
+    phoneNumber = str(sender.split(":")[1])
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+    
+    connection.start_transaction()
+    queryData = (shippingAddress, phoneNumber)
+    queryString = "UPDATE userData SET shippingAddress = %s WHERE phoneNumber = %s"
+
+    cursor = connection.cursor(buffered=True, dictionary=True)
+    cursor.execute(queryString, queryData)
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
 if __name__ == "__main__":
     print(getUserName("whatsapp:+919869368512"))
