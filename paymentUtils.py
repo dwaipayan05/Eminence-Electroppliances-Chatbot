@@ -1,5 +1,6 @@
 import os
 import time
+import dbUtils
 import razorpay
 from dotenv import load_dotenv
 from util import sendFreeFormText
@@ -17,12 +18,11 @@ razorPayclient = razorpay.Client(auth=(razorpayKeyID, razorypaySecretKey))
 # 1. Make Customer Details dynamic
 # 2. Make Order Details : Order ID, Quantity, Amount, Currency
 
-
-
-def genPaymentLink(itemType, amount):
+def genPaymentLink(phoneNumber ,itemType, amount):
     descriptionString = "Payment for " + itemType
     amount = int(amount) * 100
-
+    email = dbUtils.getEmail(phoneNumber)
+    phoneNumber = str(phoneNumber.split(":")[1])
     response = razorPayclient.payment_link.create({
         "amount": amount,
         "currency": "INR",
@@ -31,8 +31,8 @@ def genPaymentLink(itemType, amount):
         "description": "{}".format(descriptionString),
         "customer": {
           "name": "XYZ",
-          "email": "dwaipayanmunshi2001@gmail.com",
-          "contact": "+91-9518777694"
+          "email": "{}".format(email) ,
+          "contact": "{}".format(phoneNumber)
         },
         "notify": {
           "sms": True,
@@ -44,6 +44,7 @@ def genPaymentLink(itemType, amount):
         }
     })      
 
+    print(response)
     return response['short_url'], response['id']
 
 def paymentStatusCheck(paymentID,sender):
@@ -60,11 +61,13 @@ def paymentStatusCheck(paymentID,sender):
       message = "Your payment for amount Rs. {} is successful. For order updates and any queries, feel free to reach out to us.".format(
           amount/100)
       sendFreeFormText(account_sid, auth_token, fromWhatsapp, sender, message)
+      dbUtils.updatePaymentStatus(paymentID, "Paid")
       return
     elif status == 'failed':
       amount = response['amount']
       message = "Your payment for amount Rs. {} has failed. Please Retry your Order".format(amount/100)
       sendFreeFormText(account_sid, auth_token, fromWhatsapp, sender, message)
+      dbUtils.updatePaymentStatus(paymentID, "Failed")
       return
     
     retryCount -= 1

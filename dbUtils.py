@@ -1,4 +1,5 @@
 import os
+import uuid
 import mysql.connector
 from dotenv import load_dotenv
 
@@ -14,6 +15,14 @@ config = {
     'database': 'eminencedb',
     'raise_on_warnings': True
 }
+
+def toBinary(a):
+  l,m=[],[]
+  for i in a:
+    l.append(ord(i))
+  for i in l:
+    m.append(int(bin(i)[2:]))
+  return m
 
 def checkUserExists(phoneNumber):
     phoneNumber = phoneNumber.split(":")[1]
@@ -274,5 +283,208 @@ def updateShippingAddress(sender, shippingAddress):
     cursor.close()
     connection.close()
 
+def getUserType(phoneNumber):
+    phoneNumber = str(phoneNumber.split(":")[1])
+
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+
+    connection.start_transaction()
+    queryData = (phoneNumber,)
+    queryString = "SELECT customerType FROM userData WHERE phoneNumber=%s"
+
+    cursor = connection.cursor(buffered=True, dictionary=True)
+    cursor.execute(queryString, queryData)
+
+    result = cursor.fetchall()
+
+    customerType = result[0]['customerType']
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return customerType
+
+def getMinimumOrderQuantity(phoneNumber):
+    customerType = getUserType(phoneNumber)
+    phoneNumber = str(phoneNumber.split(":")[1])
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+
+    connection.start_transaction()
+    queryData = (customerType,)
+    queryString = "SELECT minOrderQuantity FROM pricingmodel WHERE category=%s"
+
+    cursor = connection.cursor(buffered=True, dictionary=True)
+    cursor.execute(queryString, queryData)
+
+    result = cursor.fetchall()
+
+    minOrderQuantity = result[0]['minOrderQuantity']
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return minOrderQuantity
+
+def getOrderPrice(phoneNumber, productOrdered, quantity):
+    customerType = getUserType(phoneNumber)
+    phoneNumber = str(phoneNumber.split(":")[1])
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+
+    connection.start_transaction()
+    queryData = (customerType,)
+    queryString = "SELECT sellingPrice FROM pricingmodel WHERE category=%s"
+
+    cursor = connection.cursor(buffered=True, dictionary=True)
+    cursor.execute(queryString, queryData)
+
+    result = cursor.fetchall()
+
+    price = int(result[0]['sellingPrice'])
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return price * quantity
+
+def getProductID(product):
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+
+    connection.start_transaction()
+    queryData = (product,)
+    queryString = "SELECT productID FROM productsdata WHERE productName=%s"
+
+    cursor = connection.cursor(buffered=True, dictionary=True)
+    cursor.execute(queryString, queryData)
+
+    result = cursor.fetchall()
+
+    productID = result[0]['productID']
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return productID
+
+def getSellingPrice(customerType):
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+
+    connection.start_transaction()
+    queryData = (customerType,)
+    queryString = "SELECT sellingPrice FROM pricingmodel WHERE category=%s"
+
+    cursor = connection.cursor(buffered=True, dictionary=True)
+    cursor.execute(queryString, queryData)
+
+    result = cursor.fetchall()
+
+    sellingPrice = int(result[0]['sellingPrice'])
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return sellingPrice
+
+def addOrderToDB(phoneNumber, productOrdered, quantity, price):
+    productID = getProductID(productOrdered)
+    customerType = getUserType(phoneNumber)
+    sellingPrice = getSellingPrice(customerType)
+    phoneNumber = str(phoneNumber.split(":")[1])
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+    
+    connection.start_transaction()
+    queryData = (phoneNumber, quantity, price, sellingPrice)
+    queryString = "INSERT INTO orderdata (orderID, userID, orderDate, productID, quantity, amount, sellingPrice) VALUES (UUID_TO_BIN(UUID()), %s, NOW(), UUID_TO_BIN(UUID()), %s, %s, %s)"
+    print(queryString)
+    cursor = connection.cursor(buffered=True, dictionary=True)
+    cursor.execute(queryString, queryData)
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+    return "Hello"
+
+def getEmail(phoneNumber):
+    phoneNumber = str(phoneNumber.split(":")[1])
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+
+    connection.start_transaction()
+    queryData = (phoneNumber,)
+    queryString = "SELECT emailID FROM userData WHERE phoneNumber=%s"
+
+    cursor = connection.cursor(buffered=True, dictionary=True)
+    cursor.execute(queryString, queryData)
+
+    result = cursor.fetchall()
+
+    emailID = result[0]['emailID']
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return emailID
+
+def addPaymentsToDB(paymentID, userID, amount):
+    userID = str(userID.split(":")[1])
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+    
+    connection.start_transaction()
+    queryData = (paymentID, userID, amount, "Created")
+    queryString = "INSERT INTO paymentdata (paymentID, razorpayID, userID, amount, paymentDate, status) VALUES (UUID_TO_BIN(UUID()), %s, %s, %s, NOW(), %s)"
+    cursor = connection.cursor(buffered=True, dictionary=True)
+    cursor.execute(queryString, queryData)
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+def updatePaymentStatus(paymentID, status):
+    try:
+        connection = mysql.connector.connect(**config)
+    except mysql.connector.Error as error:
+        print("Failed to connect to MySQL: {}".format(error))
+        return
+    
+    connection.start_transaction()
+    queryData = (status, paymentID)
+    queryString = "UPDATE paymentdata SET status=%s WHERE razorpayID=%s"
+    cursor = connection.cursor(buffered=True, dictionary=True)
+    cursor.execute(queryString, queryData)
+
+    connection.commit()
+    cursor.close()
+    connection.close()
 if __name__ == "__main__":
     print(getUserName("whatsapp:+919869368512"))

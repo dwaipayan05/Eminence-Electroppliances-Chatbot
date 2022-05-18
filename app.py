@@ -95,22 +95,9 @@ def reply():
         
         elif session.get('lastMenu') == 'ex.productList':
             session['productOrdered'] = "Roma 2.1"
-        
-            GSTIN = dbUtils.getGSTIN(sender)
-            if GSTIN == "N/A":
-                response = "Hey ! We don't have your GST Number. Do you have GST Number ? \n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
-                session['lastMenu'] = 'ex.orderGSTNumberMenu'
-                session['lastState'] = 'ex.orderGSTNumberConfirm'
-            else:
-                BillingAddress = dbUtils.getBillingAddress(sender)
-                if BillingAddress == "N/A":
-                    response = "Please Enter your Billing Address Below"
-                    session['lastState'] = 'ex.orderEnterBillingAddress'
-                else:
-                    ShippingAddress = dbUtils.getShippingAddress(sender)
-                    session['lastState'] = 'ex.orderShippingAddressConfirm'
-                    session['lastMenu'] = 'ex.orderShippingAddressMenu'
-                    response = "Please Confirm your Shipping Address Below \n" + str(ShippingAddress) + "\n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
+            session['lastState'] = "ex.orderQuantity"
+            minOrderQuantity = dbUtils.getMinimumOrderQuantity(sender)
+            response = "Please Enter the Quantity you would like to Order. The minimum order quantity for you is {}".format(str(minOrderQuantity))
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
@@ -123,8 +110,31 @@ def reply():
             return str(reply_text)
         
         elif session.get('lastMenu') == 'ex.orderShippingAddressMenu':
-            response = "Order Summary"
-            session['lastState'] = 'ex.orderShippingAddressConfirm'
+            session['lastState'] = 'ex.orderSummary'
+
+            productOrdered = session.get('productOrdered')
+            orderQuantity = int(session.get('orderQuantity'))
+            billingAddress = session.get('orderBillingAddress')
+            shippingAddress = session.get('orderShippingAddress')
+            price = dbUtils.getOrderPrice(
+                sender, productOrdered, orderQuantity)
+
+            uniqueOrderID = dbUtils.addOrderToDB(
+                sender, productOrdered, orderQuantity, price)
+            paymentLink, paymentID = paymentUtils.genPaymentLink(
+                sender, productOrdered, price)
+
+            response = "Hey ! Thank you for Placing the Order. Your Order Summary is as follows : \n\nProduct Ordered : {} \nQuantity Ordered : {} \nBilling Address : {} \nShipping Address : {}\n\nThe total amount to be paid is *Rs. {}*. Please make the payment through the given Payment Link : {}. The Payment Link will expire in *5 Mins*".format(
+                productOrdered, orderQuantity, billingAddress, shippingAddress, price, paymentLink)
+
+            paymentThreadName = "paymentThread_" + str(paymentID)
+            paymentStatusThread = threading.Thread(
+                name=paymentThreadName, target=paymentUtils.paymentStatusCheck, args=(paymentID, sender))
+            paymentStatusThread.start()
+            dbUtils.addPaymentsToDB(paymentID, sender, price)
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
         else:
             response = "Hey ! It Seems like you selected an invalid option. Please type Reset to start again."
 
@@ -167,22 +177,10 @@ def reply():
         
         elif session.get('lastMenu') == 'ex.productList':
             session['productOrdered'] = "Roma 2.4"
-        
-            GSTIN = dbUtils.getGSTIN(sender)
-            if GSTIN == "N/A":
-                response = "Hey ! We don't have your GST Number. Do you have GST Number ? \n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
-                session['lastMenu'] = 'ex.orderGSTNumberMenu'
-                session['lastState'] = 'ex.orderGSTNumberConfirm'
-            else:
-                BillingAddress = dbUtils.getBillingAddress(sender)
-                if BillingAddress == "N/A":
-                    response = "Please Enter your Billing Address Below"
-                    session['lastState'] = 'ex.orderEnterBillingAddress'
-                else:
-                    ShippingAddress = dbUtils.getShippingAddress(sender)
-                    session['lastState'] = 'ex.orderShippingAddressConfirm'
-                    session['lastMenu'] = 'ex.orderShippingAddressMenu'
-                    response = "Please Confirm your Shipping Address Below \n" + str(ShippingAddress) + "\n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
+            session['lastState'] = "ex.orderQuantity"
+            minOrderQuantity = dbUtils.getMinimumOrderQuantity(sender)
+            response = "Please Enter the Quantity you would like to Order. The minimum order quantity for you is {}".format(
+                str(minOrderQuantity))
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
@@ -225,22 +223,10 @@ def reply():
         
         elif session.get('lastMenu') == 'ex.productList':
             session['productOrdered'] = "Roma Double"
-        
-            GSTIN = dbUtils.getGSTIN(sender)
-            if GSTIN == "N/A":
-                response = "Hey ! We don't have your GST Number. Do you have GST Number ? \n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
-                session['lastMenu'] = 'ex.orderGSTNumberMenu'
-                session['lastState'] = 'ex.orderGSTNumberConfirm'
-            else:
-                BillingAddress = dbUtils.getBillingAddress(sender)
-                if BillingAddress == "N/A":
-                    response = "Please Enter your Billing Address Below"
-                    session['lastState'] = 'ex.orderEnterBillingAddress'
-                else:
-                    ShippingAddress = dbUtils.getShippingAddress(sender)
-                    session['lastState'] = 'ex.orderShippingAddressConfirm'
-                    session['lastMenu'] = 'ex.orderShippingAddressMenu'
-                    response = "Please Confirm your Shipping Address Below \n" + str(ShippingAddress) + "\n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
+            session['lastState'] = "ex.orderQuantity"
+            minOrderQuantity = dbUtils.getMinimumOrderQuantity(sender)
+            response = "Please Enter the Quantity you would like to Order. The minimum order quantity for you is {}".format(
+                str(minOrderQuantity))
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
@@ -255,25 +241,14 @@ def reply():
         
         elif session.get('lastMenu') == 'ex.productList':
             session['productOrdered'] = "Buddy"
-        
-            GSTIN = dbUtils.getGSTIN(sender)
-            if GSTIN == "N/A":
-                response = "Hey ! We don't have your GST Number. Do you have GST Number ? \n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
-                session['lastMenu'] = 'ex.orderGSTNumberMenu'
-                session['lastState'] = 'ex.orderGSTNumberConfirm'
-            else:
-                BillingAddress = dbUtils.getBillingAddress(sender)
-                if BillingAddress == "N/A":
-                    response = "Please Enter your Billing Address Below"
-                    session['lastState'] = 'ex.orderEnterBillingAddress'
-                else:
-                    ShippingAddress = dbUtils.getShippingAddress(sender)
-                    session['lastState'] = 'ex.orderShippingAddressConfirm'
-                    session['lastMenu'] = 'ex.orderShippingAddressMenu'
-                    response = "Please Confirm your Shipping Address Below \n" + str(ShippingAddress) + "\n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
+            session['lastState'] = "ex.orderQuantity"
+            minOrderQuantity = dbUtils.getMinimumOrderQuantity(sender)
+            response = "Please Enter the Quantity you would like to Order. The minimum order quantity for you is {}".format(
+                str(minOrderQuantity))
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
+
     elif re.match(incoming_msg, "Session Variables Check", re.IGNORECASE):
         lastMenu = session.get('lastMenu')
         lastState = session.get('lastState')
@@ -333,7 +308,7 @@ def reply():
            
         elif session.get('lastState') == 'nu.enterShippingAddress':
             session['userShippingAddress'] = incoming_msg
-            response = "Do you want to keep your billing address same as your shipping address ?\n1. Yes \n2. No\ nPlease Enter 1 or 2"
+            response = "Do you want to keep your billing address same as your shipping address ?\n1. Yes \n2. No\nPlease Enter 1 or 2"
             session['lastMenu'] = 'nu.enterBillingAddressQuestion'
             reply_text = MessagingResponse()
             reply_text.message(response)
@@ -381,6 +356,35 @@ def reply():
             reply_text.message(response)
             return str(reply_text)
         
+        elif session.get('lastState') == 'ex.orderQuantity':
+            session['orderQuantity'] = incoming_msg
+            minOrderQuantity = dbUtils.getMinimumOrderQuantity(sender)
+            intMinOrder = int(incoming_msg)
+
+            if intMinOrder >= minOrderQuantity:
+                GSTIN = dbUtils.getGSTIN(sender)
+                if GSTIN == "N/A":
+                    response = "Hey ! We don't have your GST Number. Do you have GST Number ? \n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
+                    session['lastMenu'] = 'ex.orderGSTNumberMenu'
+                    session['lastState'] = 'ex.orderGSTNumberConfirm'
+                else:
+                    BillingAddress = dbUtils.getBillingAddress(sender)
+                    if BillingAddress == "N/A":
+                        response = "Please Enter your Billing Address Below"
+                        session['lastState'] = 'ex.orderEnterBillingAddress'
+                    else:
+                        ShippingAddress = dbUtils.getShippingAddress(sender)
+                        session['lastState'] = 'ex.orderShippingAddressConfirm'
+                        session['lastMenu'] = 'ex.orderShippingAddressMenu'
+                        response = "Please Confirm your Shipping Address Below \n" + str(ShippingAddress) + "\n\n 1. Yes \n 2. No \n\n Type 1 or 2 to confirm."
+            else:
+                response = "The Quantity entered is less than the Minimum Order Quantity, Please enter a Quantity greater than or equal to " + str(minOrderQuantity)
+                session['lastState'] = 'ex.orderQuantity'
+            
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+        
         elif session.get('lastState') == 'ex.orderGSTNumberEnter':
             session['orderGSTNumber'] = incoming_msg
             dbUtils.updateGSTNumber(sender, session.get('orderGSTNumber'))
@@ -411,9 +415,29 @@ def reply():
         
         elif session.get('lastState') == 'ex.orderEnterShippingAddress':
             session['orderShippingAddress'] = incoming_msg
-            dbUtils.updateShippingAddress(sender, session.get('orderShippingAddress'))
+            dbUtils.updateShippingAddress(
+                sender, session.get('orderShippingAddress'))
             session['lastState'] = 'ex.orderSummary'
-            response = "Order Summary"
+
+            productOrdered = session.get('productOrdered')
+            orderQuantity = int(session.get('orderQuantity'))
+            billingAddress = session.get('orderBillingAddress')
+            shippingAddress = session.get('orderShippingAddress')
+            price = dbUtils.getOrderPrice(sender, productOrdered, orderQuantity)
+
+            uniqueOrderID = dbUtils.addOrderToDB(
+                sender, productOrdered, orderQuantity, price)
+            paymentLink, paymentID = paymentUtils.genPaymentLink(
+                sender, productOrdered, price)
+            
+            response = "Hey ! Thank you for Placing the Order. Your Order Summary is as follows : \n\nProduct Ordered : {} \nQuantity Ordered : {} \nBilling Address : {} \nShipping Address : {}\n\nThe total amount to be paid is *Rs. {}*. Please make the payment through the given Payment Link : {}. The Payment Link will expire in *5 Mins*".format(
+                productOrdered, orderQuantity, billingAddress, shippingAddress, price, paymentLink)
+            
+            paymentThreadName = "paymentThread_" + str(paymentID)
+            paymentStatusThread = threading.Thread(
+                name=paymentThreadName, target=paymentUtils.paymentStatusCheck, args=(paymentID, sender))
+            paymentStatusThread.start()
+            dbUtils.addPaymentsToDB(paymentID, sender, price)
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
