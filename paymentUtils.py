@@ -58,14 +58,15 @@ def paymentStatusCheck(paymentID,sender):
     print(status)
     if status == 'paid':
       amount = response['amount']
-      message = "Your payment for amount Rs. {} is successful. For order updates and any queries, feel free to reach out to us.".format(
+      message = "Your payment for amount Rs. {} is successful. For order updates and any queries, feel free to reach out to us. \n\n You can type *Order* to place another order or type *Menu* to explore other sections or type *Contact* to get reach out to us.".format(
           amount/100)
       sendFreeFormText(account_sid, auth_token, fromWhatsapp, sender, message)
       dbUtils.updatePaymentStatus(paymentID, "Paid")
       return
     elif status == 'failed':
       amount = response['amount']
-      message = "Your payment for amount Rs. {} has failed. Please Retry your Order".format(amount/100)
+      message = "Your payment for amount Rs. {} has failed. Please Retry your Order.\n\n You can type *Order* to place another order or type *Menu* to explore other sections or type *Contact* to get reach out to us.".format(
+          amount/100)
       sendFreeFormText(account_sid, auth_token, fromWhatsapp, sender, message)
       dbUtils.updatePaymentStatus(paymentID, "Failed")
       return
@@ -74,7 +75,8 @@ def paymentStatusCheck(paymentID,sender):
     time.sleep(20)
   
   razorPayclient.payment_link.cancel(paymentID)
-  message = "Your payment for amount Rs. {} wasn't completed within the time frame. We're deactivating the Payment Link".format(amount/100)
+  message = "Your payment for amount Rs. {} wasn't completed within the time frame. We're deactivating the Payment Link.\n\n You can type *Order* to place another order or type *Menu* to explore other sections or type *Contact* to get reach out to us.".format(
+      amount/100)
   sendFreeFormText(account_sid, auth_token, fromWhatsapp, sender, message)
   return
 

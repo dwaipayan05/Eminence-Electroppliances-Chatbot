@@ -21,7 +21,7 @@ def sendEmail(phoneNumber, message):
     From : {}
     '''.format(userName, message, phoneNumber)
 
-    smtpServer.sendmail(senderEmailID, "", messageBody)
+    smtpServer.sendmail(senderEmailID, "nikitakar1479@gmail.com", messageBody)
     smtpServer.quit()
 
 if __name__ == "__main__":
