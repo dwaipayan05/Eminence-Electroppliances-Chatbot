@@ -66,7 +66,7 @@ def reply():
              reply_text.message(response)
              return str(reply_text)
         else:
-             response = "Hey ! It seems like you are not registered with us. Could you please enter your First Name ?"
+             response = "Hey ! It seems like you are not registered with us. Could you please enter your Name ?"
              session['lastState'] = 'nu.enterName'
              reply_text = MessagingResponse()
              reply_text.message(response)
@@ -98,7 +98,7 @@ def reply():
             session['userType'] = 'newUser'
             session['lastMenu'] = 'newUserMenu'
             session['lastState'] = 'nu.enterName'
-            response = "Hey ! We're happy to onboard you to the platform ! What's your first name ?"
+            response = "Hey ! We're happy to onboard you to the platform ! What's your Name ?"
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
@@ -319,15 +319,7 @@ def reply():
 
         elif session.get('lastState') == 'nu.enterName':
             session['userFirstName'] = incoming_msg
-            response = "Hey {} ! What's your last name ?".format(session.get('userFirstName'))
-            session['lastState'] = 'nu.enterLastName'
-            reply_text = MessagingResponse()
-            reply_text.message(response)
-            return str(reply_text)
-        
-        elif session.get('lastState') == 'nu.enterLastName':
-            session['userLastName'] = incoming_msg
-            response = "Hey {} {} ! What's your email id ?".format(session.get('userFirstName'), session.get('userLastName'))
+            response = "Hey {} ! What's your email id ?".format(session.get('userFirstName'))
             session['lastState'] = 'nu.enterEmail'
             reply_text = MessagingResponse()
             reply_text.message(response)

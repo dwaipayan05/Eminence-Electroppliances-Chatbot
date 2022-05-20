@@ -49,6 +49,7 @@ def checkUserExists(phoneNumber):
 
 def addUserToDB(phoneNumber, firstName, lastName, email, customerType, shippingAddress, billingAddress, GSTIN):
     userExists, result = checkUserExists(phoneNumber=phoneNumber)
+    lastName = ""
     phoneNumber = phoneNumber.split(":")[1]
     try:
         connection = mysql.connector.connect(**config)
@@ -114,14 +115,14 @@ def getUserName(phoneNumber):
     
     connection.start_transaction()
     queryData = (phoneNumber,)
-    queryString = "SELECT firstName, lastName FROM userData WHERE phoneNumber=%s"
+    queryString = "SELECT firstName FROM userData WHERE phoneNumber=%s"
 
     cursor = connection.cursor(buffered = True, dictionary = True)
     cursor.execute(queryString, queryData)
 
     result = cursor.fetchall()
 
-    userName = result[0]['firstName'] + " " + result[0]['lastName']
+    userName = result[0]['firstName']
     connection.commit()
     cursor.close()
     connection.close()
