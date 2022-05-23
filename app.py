@@ -15,17 +15,6 @@ from flask import Flask, request, session
 def random_number(min, max):
     return random.randint(min, max)
 
-def calculatePrice(item, quantity):
-
-    quantity = (int(quantity))
-    if item == "Item 1":
-        return quantity * 20
-    
-    if item == "Item 2":
-        return quantity * 25
-    
-    return quantity * 10
-
 app = Flask(__name__)
 load_dotenv()
 app.secret_key = os.getenv('SECRET_KEY')
@@ -45,13 +34,21 @@ def reply():
         re.match(incoming_msg, "Hi", re.IGNORECASE) or \
         re.match(incoming_msg, "Hey", re.IGNORECASE):
 
-        reResponse = re.match(incoming_msg, "Hello", re.IGNORECASE)
-        introResponse = "Welcome to Emminence ! I am your personal assistant. I can help you with your Queries. Can you please confirm if you are a new user or an existing user ? \n\n 1. New User \n 2. Existing User \n \n Type 1 or 2 to confirm."
-        reply_text = MessagingResponse()
-        reply_text.message(introResponse)
-        session['lastState'] = 'welcomeText'
-        session['lastMenu'] = 'welcomeMenu'
-        return str(reply_text)
+        if isUserPresent:
+            session['lastMenu'] = 'existingUserMenu'
+            session['lastState'] = 'existingUserMenuDisplay'
+            userName = userData[0][1] + " " + userData[0][2]
+            response = "Hey {} ! What do you need help with ? \n \n1. Place a New Order\n2. Updates on Order\n3. Catalogue\n4. Other \n\nYou can always type _Menu_ to revisit this section.".format(
+                userName)
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
+        else:
+            response = "Hey ! It seems like you are not registered with us. Could you please enter your Name ?"
+            session['lastState'] = 'nu.enterName'
+            reply_text = MessagingResponse()
+            reply_text.message(response)
+            return str(reply_text)
     
 
     elif incoming_msg == "Menu" or incoming_msg == "menu" :
@@ -159,8 +156,8 @@ def reply():
             paymentLink, paymentID = paymentUtils.genPaymentLink(
                 sender, productOrdered, price)
 
-            response = "Hey ! Thank you for Placing the Order. Your Order Summary is as follows : \n\nProduct Ordered : {} \nQuantity Ordered : {} \nBilling Address : {} \nShipping Address : {}\n\nThe total amount to be paid is *Rs. {}*. Please make the payment through the given Payment Link : {}. The Payment Link will expire in *5 Mins*".format(
-                productOrdered, orderQuantity, billingAddress, shippingAddress, price, paymentLink)
+            response = "Hey ! Thank you for Placing the Order. Your Order Summary is as follows : \n\nProduct Ordered : {} \nQuantity Ordered : {} \nShipping Address : {}\n\nThe total amount to be paid is *Rs. {}*.\n\nPlease make the payment through the given Payment Link : {}.\nThe Payment Link will expire in *5 Mins*".format(
+                productOrdered, orderQuantity, shippingAddress, price, paymentLink)
 
             paymentThreadName = "paymentThread_" + str(paymentID)
             paymentStatusThread = threading.Thread(
@@ -299,23 +296,7 @@ def reply():
             response = "Sorry, I didn't understand that. Please type a Hi or Hello to start the conversation."
             reply_text = MessagingResponse()
             reply_text.message(response)
-            return str(reply_text)
-        
-        elif session.get('lastState') == 'ex.orderAddress':
-            session['orderAddress'] = incoming_msg
-            price = calculatePrice(session.get('orderItem'), session.get('orderQuantity'))
-            paymentLink, paymentID = paymentUtils.genPaymentLink(session.get('orderItem'), price)
-            response = "Hey ! Thank You for Placing the Order ! Here's the details of the Order : \n1. Item : {} \n2. Quantity : {} \n3. Delivery Address : {} \nThe total price of the order is *Rs. {}* , Pay the amount on the Razorpay Link Here {}. The payment link will be active only for 10 minutes".format(session.get('orderItem'), session.get('orderQuantity'), session.get('orderAddress'), price, paymentLink)
-            session['lastState'] = 'ex.orderSummary'
-            reply_text = MessagingResponse()
-            reply_text.message(response)
-
-            paymentThreadName = "paymentThread_" + str(paymentID)
-            print(paymentID)
-            paymentStatusThread = threading.Thread(
-                name=paymentThreadName, target=paymentUtils.paymentStatusCheck, args=(paymentID, sender))
-            paymentStatusThread.start()
-            return str(reply_text)
+            return str(reply_text)  
 
         elif session.get('lastState') == 'nu.enterName':
             session['userFirstName'] = incoming_msg
@@ -347,9 +328,9 @@ def reply():
             session['userGSTNumber'] = incoming_msg
             dbUtils.addUserToDB(sender, session.get('userFirstName'), session.get('userLastName'), session.get(
                 'userEmail'), session.get('nu.clientCategory'), session.get('userShippingAddress'), session.get('userBillingAddress'), session.get('userGSTNumber'))
-            response = "Thank you {} {} ! You have successfully registered with us. Please type *Menu* to explore our services further".format(
-                session.get('userFirstName'), session.get('userLastName'))
-            session['lastState'] = 'nu.ProfileSummary'
+            response = "Thank you {} ! You have successfully registered with us. What do you need help with ? \n \n1. Place a New Order\n2. Updates on Order\n3. Catalogue\n4. Other ".format(
+                session.get('userFirstName'))
+            session['lastState'] = 'existingUserMenuDisplay'
             reply_text = MessagingResponse()
             reply_text.message(response)
             return str(reply_text)
@@ -359,7 +340,7 @@ def reply():
             emailThread = threading.Thread(
                 name=emailThreadName, target=emailUtils.sendEmail, args=(sender, incoming_msg))
             emailThread.start()
-            response = "Your response has been recorded. We'll be reaching out to you soon with our response"
+            response = "Your response has been recorded. We'll reach out to you shortly"
             session['lastState'] = 'ex.CustomQueryRecorded'
             reply_text = MessagingResponse()
             reply_text.message(response)
@@ -439,8 +420,8 @@ def reply():
             paymentLink, paymentID = paymentUtils.genPaymentLink(
                 sender, productOrdered, price)
             
-            response = "Hey ! Thank you for Placing the Order. Your Order Summary is as follows : \n\nProduct Ordered : {} \nQuantity Ordered : {} \nBilling Address : {} \nShipping Address : {}\n\nThe total amount to be paid is *Rs. {}*. Please make the payment through the given Payment Link : {}. The Payment Link will expire in *5 Mins*".format(
-                productOrdered, orderQuantity, billingAddress, shippingAddress, price, paymentLink)
+            response = "Hey ! Thank you for Placing the Order. Your Order Summary is as follows : \n\nProduct Ordered : {} \nQuantity Ordered : {} \nShipping Address : {}\n\nThe total amount to be paid is *Rs. {}*.\n\nPlease make the payment through the given Payment Link : {}.\nThe Payment Link will expire in *5 Mins*".format(
+                productOrdered, orderQuantity, shippingAddress, price, paymentLink)
             
             paymentThreadName = "paymentThread_" + str(paymentID)
             paymentStatusThread = threading.Thread(
