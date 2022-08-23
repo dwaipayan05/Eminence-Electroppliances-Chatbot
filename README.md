@@ -83,4 +83,18 @@ Sends a broadcast message using the sendFreeFormText function to all the users i
 - Add Incoming Message URL as the `/whatsapp` route of the Flask App [URL would be Either Deployed App URL or Local Host tunneled through ngrok]. The URL Should be Publicly Accessible
 - Refer this documentation for [Twilio Setup](https://www.twilio.com/docs/whatsapp/sandbox)
 
+### Installation Steps
+- Install mysql Server + Client
+- Setup the Databases from the `eminenceDB.sql` File
+- Configure the Database Credentials in a `.env` File. Host is Considered to be Localhost, Can be changed in `dbUtils.py`
+```
+MYSQL_USERNAME=<username>
+MYSQL_PASSWORD=<password>
+```
+- Install all Required Python Libraries using `pip`
+- Use [ngrok](https://ngrok.com/) to tunnel localhost to a Public IP
+- Run `python app.py` to start up the Flask App
+- Run `ngrok http 5000` to get a Public IP of Localhost
+- Add the Public URL to the Twilio Incoming Webhook
+- Chat App is Ready
 
